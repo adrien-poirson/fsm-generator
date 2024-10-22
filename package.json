@@ -1,0 +1,35 @@
+{
+    "name": "fsm-generator",
+    "version": "1.0.0",
+    "description": "A Finite State Machine generator",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc",
+        "prepublishOnly": "npm run build",
+        "test": "jest"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/adrien-poirson/fsm-generator.git"
+    },
+    "keywords": [
+        "finite state machine",
+        "fsm",
+        "generator"
+    ],
+    "author": "Adrien Poirson",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/adrien-poirson/fsm-generator/issues"
+    },
+    "homepage": "https://github.com/adrien-poirson/fsm-generator#readme",
+    "devDependencies": {
+        "typescript": "^4.5.4",
+        "jest": "^27.4.7",
+        "@types/jest": "^27.4.0"
+    }
+}
