@@ -2,17 +2,18 @@
     "name": "fsm-generator",
     "version": "1.0.0",
     "description": "A Finite State Machine generator",
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
+    "main": "index.js",
+    "types": "index.d.ts",
     "files": [
         "*.js",
         "*.d.ts",
-        "!**/*.test.js",
-        "!**/*.spec.js"
+        "README.md",
+        "LICENSE"
     ],
     "scripts": {
         "build": "tsc",
-        "prepublishOnly": "npm run build && node scripts/prepare-publish.js",
+        "prepare": "npm run build",
+        "prepublishOnly": "node scripts/prepare-publish.js",
         "test": "jest"
     },
     "repository": {

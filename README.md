@@ -89,16 +89,16 @@ const trafficLightFSM = new FiniteStateMachine({
 });
 
 // Use the FSM
-console.log(trafficLightFSM.getCurrentState()); // 'Red'
-console.log(trafficLightFSM.getOutput()); // 'Stop'
+trafficLightFSM.getCurrentState(); // 'Red'
+trafficLightFSM.getOutput(); // 'Stop'
 trafficLightFSM.transition("Next");
-console.log(trafficLightFSM.getCurrentState()); // 'Green'
-console.log(trafficLightFSM.getOutput()); // 'Go'
+trafficLightFSM.getCurrentState(); // 'Green'
+trafficLightFSM.getOutput(); // 'Go'
 trafficLightFSM.transition("Next");
-console.log(trafficLightFSM.getCurrentState()); // 'Yellow'
-console.log(trafficLightFSM.getOutput()); // 'Prepare to stop'
+trafficLightFSM.getCurrentState(); // 'Yellow'
+trafficLightFSM.getOutput(); // 'Prepare to stop'
 trafficLightFSM.reset();
-console.log(trafficLightFSM.getCurrentState()); // 'Red'
+trafficLightFSM.getCurrentState(); // 'Red'
 // Process a sequence of inputs
 const result = trafficLightFSM.process("NextNextNext");
 console.log(result);

@@ -1,2 +1,25 @@
-node_modules/
+# Ignore the dist directory
 dist/
+
+# Ignore compiled JavaScript files in the root, but not in subdirectories
+/*.js
+/*.js.map
+
+# Ignore TypeScript declaration files in the root, but not in subdirectories
+/*.d.ts
+
+# Don't ignore any JavaScript files in the scripts directory
+!scripts/*.js
+
+# Node modules
+node_modules/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
