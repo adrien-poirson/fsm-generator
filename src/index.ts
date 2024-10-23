@@ -1,7 +1,7 @@
 type StateName = string;
 type InputSymbol = string;
-type Transition = [StateName, InputSymbol, StateName];
-type Output<O> = [StateName, O];
+export type Transition = [StateName, InputSymbol, StateName];
+export type Output<O> = [StateName, O];
 
 export type FSMConfig<O> = {
     states: StateName[];
@@ -20,14 +20,14 @@ type ProcessResult<O> = {
 
 type StructureFormat = "json" | "object";
 
-class InvalidStateError extends Error {
+export class InvalidStateError extends Error {
     constructor(state: StateName) {
         super(`Invalid state: ${state}`);
         this.name = "InvalidStateError";
     }
 }
 
-class InvalidSymbolError extends Error {
+export class InvalidSymbolError extends Error {
     constructor(symbol: InputSymbol) {
         super(`Invalid input symbol: ${symbol}`);
         this.name = "InvalidSymbolError";
@@ -44,8 +44,8 @@ export default class FiniteStateMachine<O> {
     private initialState: StateName;
     private currentState: StateName;
     private acceptingStates: Set<StateName>;
-    private transitionFunction: Map<string, StateName>;
-    private outputFunction: Map<StateName, O>;
+    private transitionMap: Map<string, StateName>;
+    private outputMap: Map<StateName, O>;
 
     /**
      * Creates a new Finite State Machine.
@@ -57,9 +57,14 @@ export default class FiniteStateMachine<O> {
         this.initialState = config.initialState;
         this.currentState = this.initialState;
         this.acceptingStates = new Set(config.acceptingStates);
-        this.transitionFunction = new Map();
-        this.outputFunction = new Map(config.outputs);
+        this.transitionMap = new Map();
+        this.outputMap = new Map(config.outputs);
 
+        this.validateStates(config);
+        this.buildTransitionMap(config.transitions);
+    }
+
+    private validateStates(config: FSMConfig<O>) {
         if (!this.isValidState(this.initialState)) {
             throw new InvalidStateError(this.initialState);
         }
@@ -70,20 +75,24 @@ export default class FiniteStateMachine<O> {
             }
         }
 
-        for (const [fromState, input, toState] of config.transitions) {
-            if (!this.isValidState(fromState) || !this.isValidState(toState)) {
-                throw new InvalidStateError(`${fromState} or ${toState}`);
-            }
-            if (!this.isValidSymbol(input)) {
-                throw new InvalidSymbolError(input);
-            }
-            this.transitionFunction.set(`${fromState},${input}`, toState);
-        }
-
         for (const [state] of config.outputs) {
             if (!this.isValidState(state)) {
                 throw new InvalidStateError(state);
             }
+        }
+    }
+
+    private buildTransitionMap(transitions: Transition[]) {
+        for (const [fromState, input, toState] of transitions) {
+            if (!this.isValidState(fromState) || !this.isValidState(toState)) {
+                throw new InvalidStateError(
+                    this.isValidState(fromState) ? toState : fromState
+                );
+            }
+            if (!this.isValidSymbol(input)) {
+                throw new InvalidSymbolError(input);
+            }
+            this.transitionMap.set(`${fromState},${input}`, toState);
         }
     }
 
@@ -107,52 +116,37 @@ export default class FiniteStateMachine<O> {
 
     /**
      * Performs a state transition based on the current state and input symbol.
-     * @param currentState The current state of the FSM.
      * @param input The input symbol.
      * @returns The next state, or null if no transition is defined.
-     * @throws {InvalidStateError} If the current state is invalid.
      * @throws {InvalidSymbolError} If the input symbol is invalid.
      */
-    public transition(
-        currentState: StateName,
-        input: InputSymbol
-    ): StateName | null {
-        if (!this.isValidState(currentState)) {
-            throw new InvalidStateError(currentState);
-        }
+    public transition(input: InputSymbol): StateName | null {
         if (!this.isValidSymbol(input)) {
             throw new InvalidSymbolError(input);
         }
-        const nextState = this.transitionFunction.get(
-            `${currentState},${input}`
+        const nextState = this.transitionMap.get(
+            `${this.currentState},${input}`
         );
+        if (nextState) {
+            this.currentState = nextState;
+        }
         return nextState || null;
     }
 
     /**
-     * Checks if a given state is an accepting state.
-     * @param state The state to check.
-     * @returns True if the state is an accepting state, false otherwise.
-     * @throws {InvalidStateError} If the state is invalid.
+     * Checks if the current state is an accepting state.
+     * @returns True if the current state is an accepting state, false otherwise.
      */
-    public isAcceptingState(state: StateName): boolean {
-        if (!this.isValidState(state)) {
-            throw new InvalidStateError(state);
-        }
-        return this.acceptingStates.has(state);
+    public isInAcceptingState(): boolean {
+        return this.acceptingStates.has(this.currentState);
     }
 
     /**
-     * Gets the output associated with a given state.
-     * @param state The state to get the output for.
-     * @returns The output associated with the state, or undefined if no output is defined.
-     * @throws {InvalidStateError} If the state is invalid.
+     * Gets the output associated with the current state.
+     * @returns The output associated with the current state, or undefined if no output is defined.
      */
-    public getOutput(state: StateName): O | undefined {
-        if (!this.isValidState(state)) {
-            throw new InvalidStateError(state);
-        }
-        return this.outputFunction.get(state);
+    public getOutput(): O | undefined {
+        return this.outputMap.get(this.currentState);
     }
 
     /**
@@ -163,23 +157,22 @@ export default class FiniteStateMachine<O> {
      * @throws {Error} If no transition is defined for a given state and input combination.
      */
     public process(input: string): ProcessResult<O> {
-        this.currentState = this.initialState;
+        this.reset();
         for (const symbol of input) {
-            if (!this.isValidSymbol(symbol)) {
-                throw new InvalidSymbolError(symbol);
-            }
-            const nextState = this.transition(this.currentState, symbol);
+            const nextState = this.transition(symbol);
             if (nextState === null) {
                 throw new Error(
                     `No transition defined for state ${this.currentState} with input ${symbol}`
                 );
             }
-            this.currentState = nextState;
         }
+        return this.getProcessResult();
+    }
 
-        const output = this.getOutput(this.currentState);
+    private getProcessResult(): ProcessResult<O> {
+        const output = this.getOutput();
         return {
-            accepted: this.isAcceptingState(this.currentState),
+            accepted: this.isInAcceptingState(),
             output: output !== undefined ? output : null,
             finalState: this.currentState,
         };
@@ -202,12 +195,12 @@ export default class FiniteStateMachine<O> {
             outputs: [],
         };
 
-        this.transitionFunction.forEach((toState, key) => {
+        this.transitionMap.forEach((toState, key) => {
             const [fromState, input] = key.split(",");
             structure.transitions.push([fromState, input, toState]);
         });
 
-        this.outputFunction.forEach((output, state) => {
+        this.outputMap.forEach((output, state) => {
             structure.outputs.push([state, output]);
         });
 
@@ -222,5 +215,12 @@ export default class FiniteStateMachine<O> {
      */
     public getCurrentState(): StateName {
         return this.currentState;
+    }
+
+    /**
+     * Resets the FSM to its initial state.
+     */
+    public reset(): void {
+        this.currentState = this.initialState;
     }
 }
